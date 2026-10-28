@@ -1,0 +1,660 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TeamFlow - Project Management</title>
+<style>
+:root {
+  --bg:#0b0d12;
+  --sidebar:#11141c;
+  --card:#191d28;
+  --line:#303544;
+  --text:#f5f6fc;
+  --muted:#a5adbd;
+  --accent:#8b5cf6;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+}
+button,input,select,textarea {font:inherit}
+button {cursor:pointer}
+.app {display:flex;min-height:100vh}
+.sidebar {
+  width:230px;
+  background:var(--sidebar);
+  padding:24px 14px;
+  border-right:1px solid var(--line);
+}
+.logo {font-size:24px;font-weight:800;margin:10px 0 35px}
+.logo span {color:var(--accent)}
+.nav {
+  display:block;width:100%;text-align:left;
+  padding:14px;margin:5px 0;border:0;
+  background:transparent;color:var(--muted);
+  border-radius:10px;
+}
+.nav:hover,.nav.active {background:#342555;color:white}
+main {flex:1;min-width:0;padding:30px}
+.page[hidden] {display:none}
+.page {animation:fade .3s}
+@keyframes fade {
+  from {opacity:0;transform:translateY(8px)}
+  to {opacity:1;transform:translateY(0)}
+}
+.hero {
+  background:linear-gradient(120deg,#332063,#6635ae,#9b438e);
+  border-radius:18px;padding:30px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.hero-art {font-size:75px;animation:float 4s infinite ease-in-out}
+@keyframes float {50%{transform:translateY(-12px)}}
+.stats {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;margin:23px 0;
+}
+.card,.panel {
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:15px;padding:22px;
+}
+.card strong {font-size:30px;color:#c4b5fd}
+.panel {margin:20px 0}
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:15px;
+}
+.tile {
+  background:#222737;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:18px;
+  transition:.2s;
+}
+.tile:hover {transform:translateY(-4px)}
+.primary {
+  background:var(--accent);color:white;border:0;
+  border-radius:9px;padding:12px 18px;
+}
+.danger {
+  background:#612b38;color:white;border:0;
+  padding:9px 12px;border-radius:8px;
+}
+input,select,textarea {
+  width:100%;padding:12px;background:#10151e;
+  color:white;border:1px solid #394253;border-radius:9px;
+}
+form {display:grid;gap:13px;max-width:650px}
+label {display:grid;gap:7px}
+.muted {color:var(--muted)}
+.row {
+  display:flex;align-items:center;
+  justify-content:space-between;gap:12px;
+}
+.board {
+  display:grid;grid-template-columns:repeat(4,minmax(200px,1fr));
+  gap:13px;overflow-x:auto;
+}
+.column {
+  min-height:250px;background:#202532;
+  padding:14px;border-radius:13px;
+  border:1px solid var(--line);
+}
+.column.drag-over {border:2px dashed var(--accent)}
+.task-card {
+  padding:14px;background:var(--card);
+  border:1px solid var(--line);
+  border-radius:10px;margin:10px 0;
+  cursor:grab;
+}
+.task-card:hover {border-color:var(--accent)}
+.pill {
+  display:inline-block;padding:5px 10px;
+  background:#372858;color:#d8b4fe;
+  border-radius:20px;font-size:12px;
+}
+.item {
+  padding:16px 0;border-bottom:1px solid var(--line);
+}
+.actions {display:flex;gap:8px;flex-wrap:wrap}
+.actions select {width:auto}
+.progress {
+  height:8px;background:#34394b;
+  border-radius:10px;overflow:hidden;
+}
+.progress div {
+  height:100%;background:var(--accent);
+}
+body.light {
+  --bg:#f5f6fc;--sidebar:#fff;--card:#fff;
+  --line:#e0e2eb;--text:#202334;--muted:#677085;
+}
+body.light .tile,body.light .column {background:#eef0f8}
+body.light input,body.light select,body.light textarea {
+  background:white;color:#202334;
+}
+@media(max-width:950px) {
+  .stats {grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:700px) {
+  .app {flex-direction:column}
+  .sidebar {width:100%}
+  .nav {display:inline-block;width:auto}
+  main {padding:17px}
+  .board {grid-template-columns:repeat(4,220px)}
+}
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after {animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="logo">✦ Team<span>Flow</span></div>
+  <nav>
+    <button class="nav active" data-page="dashboard">📊 Dashboard</button>
+    <button class="nav" data-page="projects">📁 Projects</button>
+    <button class="nav" data-page="tasks">✅ My Tasks</button>
+    <button class="nav" data-page="board">🗂️ Kanban Board</button>
+    <button class="nav" data-page="team">👥 Team Members</button>
+    <button class="nav" data-page="settings">⚙️ Settings</button>
+  </nav>
+</aside>
+
+<main>
+  <div class="row">
+    <h2 id="pageTitle">Dashboard</h2>
+    <span class="muted" id="workspaceLabel">Team Workspace</span>
+  </div>
+
+  <section id="dashboard-page" class="page">
+    <div class="hero">
+      <div>
+        <h1>Welcome to TeamFlow 🚀</h1>
+        <p>Organize projects, collaborate and achieve your goals.</p>
+        <button class="primary" onclick="showPage('tasks')">
+          + Create Task
+        </button>
+      </div>
+      <div class="hero-art" aria-hidden="true">🚀</div>
+    </div>
+
+    <div class="stats">
+      <div class="card"><p>📁 Projects</p><strong id="projectCount">0</strong></div>
+      <div class="card"><p>📋 Tasks</p><strong id="taskCount">0</strong></div>
+      <div class="card"><p>✅ Completed</p><strong id="doneCount">0</strong></div>
+      <div class="card"><p>👥 Members</p><strong id="memberCount">0</strong></div>
+    </div>
+
+    <div class="panel">
+      <h2>Project Progress</h2>
+      <div class="grid" id="dashboardProjects"></div>
+    </div>
+  </section>
+
+  <section id="projects-page" class="page" hidden>
+    <h1>Projects</h1>
+    <div class="panel">
+      <h2>Create Project</h2>
+      <form id="projectForm">
+        <label>Project Name
+          <input id="projectName" required placeholder="Website Development">
+        </label>
+        <button class="primary">Create Project</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>All Projects</h2>
+      <div class="grid" id="projectList"></div>
+    </div>
+  </section>
+
+  <section id="tasks-page" class="page" hidden>
+    <h1>Task Management</h1>
+    <div class="panel">
+      <h2>Create Task</h2>
+      <form id="taskForm">
+        <label>Title
+          <input id="taskName" required placeholder="Design Login Page">
+        </label>
+        <label>Description
+          <textarea id="taskDescription"></textarea>
+        </label>
+        <label>Project
+          <select id="taskProject" required></select>
+        </label>
+        <label>Assign Member
+          <select id="taskAssignee" required></select>
+        </label>
+        <label>Priority
+          <select id="taskPriority">
+            <option>Low</option>
+            <option>Medium</option>
+            <option>High</option>
+          </select>
+        </label>
+        <label>Due Date
+          <input type="date" id="taskDue">
+        </label>
+        <button class="primary">Create Task</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>All Tasks</h2>
+      <input id="searchTasks" placeholder="Search tasks...">
+      <div id="taskList"></div>
+    </div>
+  </section>
+
+  <section id="board-page" class="page" hidden>
+    <h1>Kanban Board</h1>
+    <p class="muted">Drag tasks between columns to change their status.</p>
+    <div class="board" id="kanbanBoard"></div>
+  </section>
+
+  <section id="team-page" class="page" hidden>
+    <h1>Team Members</h1>
+    <div class="panel">
+      <h2>Add Team Member</h2>
+      <form id="memberForm">
+        <label>Full Name
+          <input id="memberName" required>
+        </label>
+        <label>Email
+          <input id="memberEmail" type="email" required>
+        </label>
+        <label>Job Title
+          <input id="memberJob" required>
+        </label>
+        <label>Access Role
+          <select id="memberRole">
+            <option>Member</option>
+            <option>Admin</option>
+          </select>
+        </label>
+        <button class="primary">Add Member</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>All Members</h2>
+      <div class="grid" id="memberList"></div>
+    </div>
+  </section>
+
+  <section id="settings-page" class="page" hidden>
+    <h1>Settings</h1>
+    <div class="panel">
+      <h2>Workspace</h2>
+      <form id="settingsForm">
+        <label>Workspace Name
+          <input id="workspaceName" required>
+        </label>
+        <label>Description
+          <textarea id="workspaceDescription"></textarea>
+        </label>
+        <label>Theme
+          <select id="theme">
+            <option value="dark">Midnight Black</option>
+            <option value="light">Light</option>
+          </select>
+        </label>
+        <button class="primary">Save Settings</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>Data Management</h2>
+      <div class="actions">
+        <button class="primary" id="exportBtn">Export Data</button>
+        <button class="danger" id="resetBtn">Reset Workspace</button>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+// DATABASE DEMO: browser localStorage
+const KEY = "teamflow_simple_v1";
+
+const initial = {
+  projects: [
+    {id:"p1",name:"Website Development"},
+    {id:"p2",name:"Mobile Application"},
+    {id:"p3",name:"UI/UX Design"}
+  ],
+  members: [
+    {id:"m1",name:"Alex",email:"alex@example.com",job:"Designer",role:"Member"},
+    {id:"m2",name:"John",email:"john@example.com",job:"Developer",role:"Member"},
+    {id:"m3",name:"Sarah",email:"sarah@example.com",job:"Manager",role:"Admin"}
+  ],
+  tasks: [],
+  settings: {
+    name:"Team Workspace",
+    description:"",
+    theme:"dark"
+  }
+};
+
+function load() {
+  try {
+    return JSON.parse(localStorage.getItem(KEY)) ||
+      structuredClone(initial);
+  } catch {
+    return structuredClone(initial);
+  }
+}
+
+let data = load();
+
+function save() {
+  localStorage.setItem(KEY,JSON.stringify(data));
+}
+
+function uid() {
+  return crypto.randomUUID();
+}
+
+function element(tag,text,cls) {
+  const e = document.createElement(tag);
+  if(text!==undefined)e.textContent=text;
+  if(cls)e.className=cls;
+  return e;
+}
+
+function showPage(page) {
+  document.querySelectorAll(".page").forEach(e=>{
+    e.hidden = e.id !== page+"-page";
+  });
+  document.querySelectorAll(".nav").forEach(e=>{
+    e.classList.toggle("active",e.dataset.page===page);
+  });
+  const titles = {
+    dashboard:"Dashboard",projects:"Projects",
+    tasks:"My Tasks",board:"Kanban Board",
+    team:"Team Members",settings:"Settings"
+  };
+  document.getElementById("pageTitle").textContent=titles[page];
+}
+
+document.querySelectorAll(".nav").forEach(btn=>{
+  btn.onclick=()=>showPage(btn.dataset.page);
+});
+
+function renderProjects() {
+  const list=document.getElementById("projectList");
+  const dashboard=document.getElementById("dashboardProjects");
+  const select=document.getElementById("taskProject");
+
+  list.replaceChildren();
+  dashboard.replaceChildren();
+  select.replaceChildren(new Option("Select Project",""));
+
+  data.projects.forEach(p=>{
+    const all=data.tasks.filter(t=>t.projectId===p.id);
+    const done=all.filter(t=>t.status==="Done").length;
+    const percent=all.length?Math.round(done/all.length*100):0;
+
+    for(const parent of [list,dashboard]){
+      const card=element("div",undefined,"tile");
+      const name=element("h3",p.name);
+      const meta=element("p",`${done}/${all.length} tasks completed`,"muted");
+      const progress=element("div",undefined,"progress");
+      const bar=element("div");
+      bar.style.width=percent+"%";
+      progress.append(bar);
+      card.append(name,meta,progress,element("p",percent+"% complete","muted"));
+      parent.append(card);
+    }
+    select.add(new Option(p.name,p.id));
+  });
+}
+
+document.getElementById("projectForm").onsubmit=e=>{
+  e.preventDefault();
+  const name=document.getElementById("projectName").value.trim();
+  if(!name)return;
+  data.projects.push({id:uid(),name});
+  save();render();e.target.reset();
+};
+
+function renderMembers() {
+  const list=document.getElementById("memberList");
+  const select=document.getElementById("taskAssignee");
+
+  list.replaceChildren();
+  select.replaceChildren(new Option("Select Member",""));
+
+  data.members.forEach(m=>{
+    const card=element("div",undefined,"tile");
+    card.append(
+      element("h3","👤 "+m.name),
+      element("p",m.email,"muted"),
+      element("p",m.job),
+      element("span",m.role,"pill")
+    );
+
+    const remove=element("button","Remove","danger");
+    const assigned=data.tasks.some(t=>t.assigneeId===m.id);
+
+    remove.disabled=assigned;
+    remove.title=assigned?"Reassign tasks before removing":"Remove member";
+    remove.onclick=()=>{
+      if(!confirm("Remove "+m.name+"?"))return;
+      data.members=data.members.filter(x=>x.id!==m.id);
+      save();render();
+    };
+    card.append(element("p",""),remove);
+    list.append(card);
+    select.add(new Option(m.name,m.id));
+  });
+}
+
+document.getElementById("memberForm").onsubmit=e=>{
+  e.preventDefault();
+  const name=document.getElementById("memberName").value.trim();
+  const email=document.getElementById("memberEmail").value.trim().toLowerCase();
+  const job=document.getElementById("memberJob").value.trim();
+
+  if(!name||!email||!job)return;
+  if(data.members.some(m=>m.email.toLowerCase()===email)){
+    alert("Email already exists");
+    return;
+  }
+
+  data.members.push({
+    id:uid(),name,email,job,
+    role:document.getElementById("memberRole").value
+  });
+  save();render();e.target.reset();
+};
+
+document.getElementById("taskForm").onsubmit=e=>{
+  e.preventDefault();
+  const name=document.getElementById("taskName").value.trim();
+  const projectId=document.getElementById("taskProject").value;
+  const assigneeId=document.getElementById("taskAssignee").value;
+  if(!name||!projectId||!assigneeId)return;
+
+  data.tasks.push({
+    id:uid(),name,projectId,assigneeId,
+    description:document.getElementById("taskDescription").value,
+    priority:document.getElementById("taskPriority").value,
+    due:document.getElementById("taskDue").value,
+    status:"To Do"
+  });
+  save();render();e.target.reset();
+};
+
+function renderTasks() {
+  const list=document.getElementById("taskList");
+  list.replaceChildren();
+  const search=document.getElementById("searchTasks").value.toLowerCase();
+
+  data.tasks.filter(t=>t.name.toLowerCase().includes(search))
+    .forEach(t=>{
+      const project=data.projects.find(p=>p.id===t.projectId);
+      const member=data.members.find(m=>m.id===t.assigneeId);
+      const item=element("div",undefined,"item");
+
+      item.append(
+        element("h3",t.name),
+        element("p",t.description||"No description","muted"),
+        element("p",
+          `${project?.name||"Unknown"} · ${member?.name||"Unassigned"} · ${t.priority} · ${t.due||"No due date"}`,
+          "muted")
+      );
+
+      const actions=element("div",undefined,"actions");
+      const status=element("select");
+      ["To Do","In Progress","In Review","Done"].forEach(s=>{
+        status.add(new Option(s,s));
+      });
+      status.value=t.status;
+      status.onchange=()=>{
+        t.status=status.value;save();render();
+      };
+
+      const edit=element("button","Edit Title","primary");
+      edit.onclick=()=>{
+        const name=prompt("Edit task title",t.name);
+        if(name?.trim()){
+          t.name=name.trim();save();render();
+        }
+      };
+
+      const remove=element("button","Delete","danger");
+      remove.onclick=()=>{
+        if(!confirm("Delete this task?"))return;
+        data.tasks=data.tasks.filter(x=>x.id!==t.id);
+        save();render();
+      };
+
+      actions.append(status,edit,remove);
+      item.append(actions);
+      list.append(item);
+    });
+}
+
+document.getElementById("searchTasks").oninput=renderTasks;
+
+function renderBoard() {
+  const board=document.getElementById("kanbanBoard");
+  board.replaceChildren();
+
+  ["To Do","In Progress","In Review","Done"].forEach(status=>{
+    const column=element("div",undefined,"column");
+    column.append(element("h3",status));
+
+    column.ondragover=e=>{
+      e.preventDefault();
+      column.classList.add("drag-over");
+    };
+    column.ondragleave=()=>{
+      column.classList.remove("drag-over");
+    };
+    column.ondrop=e=>{
+      e.preventDefault();
+      column.classList.remove("drag-over");
+      const task=data.tasks.find(t=>t.id===e.dataTransfer.getData("text/plain"));
+      if(task){
+        task.status=status;
+        save();render();
+      }
+    };
+
+    data.tasks.filter(t=>t.status===status).forEach(t=>{
+      const card=element("div",undefined,"task-card");
+      card.draggable=true;
+      card.ondragstart=e=>{
+        e.dataTransfer.setData("text/plain",t.id);
+      };
+      card.append(
+        element("strong",t.name),
+        element("p",t.priority+" priority","muted")
+      );
+
+      // Accessible alternative to drag and drop
+      const move=element("select");
+      ["To Do","In Progress","In Review","Done"].forEach(s=>{
+        move.add(new Option(s,s));
+      });
+      move.value=t.status;
+      move.setAttribute("aria-label","Move "+t.name);
+      move.onchange=()=>{
+        t.status=move.value;
+        save();render();
+      };
+      card.append(move);
+      column.append(card);
+    });
+    board.append(column);
+  });
+}
+
+function updateStats() {
+  document.getElementById("projectCount").textContent=data.projects.length;
+  document.getElementById("taskCount").textContent=data.tasks.length;
+  document.getElementById("doneCount").textContent=
+    data.tasks.filter(t=>t.status==="Done").length;
+  document.getElementById("memberCount").textContent=data.members.length;
+}
+
+function renderSettings() {
+  document.body.classList.toggle("light",data.settings.theme==="light");
+  document.getElementById("workspaceLabel").textContent=data.settings.name;
+  document.getElementById("workspaceName").value=data.settings.name;
+  document.getElementById("workspaceDescription").value=data.settings.description;
+  document.getElementById("theme").value=data.settings.theme;
+}
+
+document.getElementById("settingsForm").onsubmit=e=>{
+  e.preventDefault();
+  data.settings.name=document.getElementById("workspaceName").value.trim();
+  data.settings.description=document.getElementById("workspaceDescription").value;
+  data.settings.theme=document.getElementById("theme").value;
+  save();render();alert("Settings saved");
+};
+
+document.getElementById("exportBtn").onclick=()=>{
+  const blob=new Blob([JSON.stringify(data,null,2)],{
+    type:"application/json"
+  });
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="teamflow-backup.json";
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+
+document.getElementById("resetBtn").onclick=()=>{
+  if(!confirm("Reset all TeamFlow data?"))return;
+  localStorage.removeItem(KEY);
+  location.reload();
+};
+
+function render() {
+  renderProjects();
+  renderMembers();
+  renderTasks();
+  renderBoard();
+  renderSettings();
+  updateStats();
+}
+
+render();
+showPage("dashboard");
+</script>
+</body>
+</html>

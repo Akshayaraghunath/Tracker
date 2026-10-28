@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>TeamFlow - Task Management</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f5f7fb;
+            color: #1e293b;
+        }
+
+        header {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        header h2 { color: #4f46e5; }
+
+        main {
+            max-width: 1000px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        .form-box, .task-box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        input, select, button {
+            padding: 12px;
+            margin: 6px 0;
+            border-radius: 7px;
+            font-size: 14px;
+        }
+
+        input, select {
+            border: 1px solid #cbd5e1;
+            width: 100%;
+        }
+
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover { background: #4338ca; }
+
+        .task {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 15px 0;
+        }
+
+        .task h3 { margin-bottom: 5px; }
+
+        .task p { color: #64748b; }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h2>TeamFlow</h2>
+    <a href="Project.html">Back to Dashboard</a>
+</header>
+
+<main>
+
+    <h1>Task Management</h1>
+    <p>Create and assign tasks to your team.</p>
+
+    <section class="form-box">
+        <h2>Create New Task</h2>
+
+        <form id="taskForm">
+
+            <input id="taskName"
+                   placeholder="Enter task title"
+                   required>
+
+            <select id="assignee" required>
+                <option value="">Assign team member</option>
+                <option>Alex</option>
+                <option>John</option>
+                <option>Sarah</option>
+            </select>
+
+            <select id="priority">
+                <option>Low</option>
+                <option>Medium</option>
+                <option>High</option>
+            </select>
+
+            <input type="date" id="dueDate">
+
+            <button type="submit">Create Task</button>
+
+        </form>
+    </section>
+
+    <section class="task-box">
+        <h2>All Tasks</h2>
+        <div id="taskList"></div>
+    </section>
+
+</main>
+
+<script>
+    const form = document.getElementById("taskForm");
+    const list = document.getElementById("taskList");
+
+    let tasks = JSON.parse(
+        localStorage.getItem("teamflow_tasks") || "[]"
+    );
+
+    function saveTasks() {
+        localStorage.setItem(
+            "teamflow_tasks",
+            JSON.stringify(tasks)
+        );
+    }
+
+    function renderTasks() {
+        list.innerHTML = "";
+
+        tasks.forEach((task, index) => {
+            const div = document.createElement("div");
+            div.className = "task";
+
+            const title = document.createElement("h3");
+            title.textContent = task.name;
+
+            const details = document.createElement("p");
+            details.textContent =
+                `Assigned: ${task.assignee} | ` +
+                `Priority: ${task.priority} | ` +
+                `Due: ${task.dueDate || "Not set"}`;
+
+            const status = document.createElement("select");
+
+            ["To Do", "In Progress", "Done"].forEach(s => {
+                const option = document.createElement("option");
+                option.value = s;
+                option.textContent = s;
+                status.appendChild(option);
+            });
+
+            status.value = task.status;
+
+            status.addEventListener("change", () => {
+                tasks[index].status = status.value;
+                saveTasks();
+            });
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete Task";
+
+            deleteButton.addEventListener("click", () => {
+                tasks.splice(index, 1);
+                saveTasks();
+                renderTasks();
+            });
+
+            div.append(title, details, status, deleteButton);
+            list.appendChild(div);
+        });
+    }
+
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        tasks.push({
+            name: document.getElementById("taskName").value,
+            assignee: document.getElementById("assignee").value,
+            priority: document.getElementById("priority").value,
+            dueDate: document.getElementById("dueDate").value,
+            status: "To Do"
+        });
+
+        saveTasks();
+        renderTasks();
+        form.reset();
+    });
+
+    renderTasks();
+</script>
+
+</body>
+</html>
